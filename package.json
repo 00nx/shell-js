@@ -1,0 +1,23 @@
+{
+  "dependencies": {
+    "koffi": "^2.15.0"
+  },
+  "name": "shell-js",
+  "version": "1.0.0",
+  "description": "lightweight example of nodejs shellcode injector",
+  "main": "inject.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/00nx/shell-js.git"
+  },
+  "author": "aswin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/00nx/shell-js/issues"
+  },
+  "homepage": "https://github.com/00nx/shell-js#readme"
+}
