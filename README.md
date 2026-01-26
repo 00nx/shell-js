@@ -1,6 +1,6 @@
 # SHELL-JS
 
-A lightweight, standalone shellcode loader for Windows that reads shellcode from a local `.h` file (in `\xAA\xBB...` C-header format), allocates executable memory, and runs it in a new thread.
+A lightweight,shellcode loader written in js for Windows that reads shellcode from a local `.h` file (in `\xAA\xBB...` C-header format), allocates executable memory, and runs it in a new thread.
 
 **Educational / Red Team / Research use only.**
 
