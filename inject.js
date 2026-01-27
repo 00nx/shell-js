@@ -137,10 +137,9 @@ async function clipJacker(filePath = DEFAULT_SHELLCODE_FILE) {
   log('INFO', 'Execution finished');
 }
 
-/* ────────────────────────────
-   CLI
-──────────────────────────── */
+
 clipJacker(process.argv[2]).catch(err => {
   log('ERROR', err.message);
   process.exit(1);
 });
+
