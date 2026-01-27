@@ -1,20 +1,22 @@
 {
+  "name": "shell-js",
+  "version": "1.8.0",
+  "description": "Minimal Node.js example demonstrating shellcode execution using native Windows APIs",
+  "type": "commonjs",
+  "main": "inject.js",
+  "scripts": {
+    "start": "node inject.js",
+    "lint": "echo \"No linting configured\"",
+    "test": "echo \"No tests specified\" && exit 1"
+  },
   "dependencies": {
     "koffi": "^2.15.0"
   },
-  "name": "shell-js",
-  "version": "1.0.0",
-  "description": "lightweight example of nodejs shellcode injector",
-  "main": "inject.js",
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/00nx/shell-js.git"
+    "url": "https://github.com/00nx/shell-js.git"
   },
-  "author": "aswin",
+  "author": "Aswin",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/00nx/shell-js/issues"
