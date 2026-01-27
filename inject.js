@@ -1,3 +1,5 @@
+'use strict';
+
 const fs = require('fs').promises;
 const koffi = require('koffi');
 
@@ -113,4 +115,5 @@ if (args.length > 0) {
     console.error('Error:', err.message);
     process.exit(1);
   });
+
 }
