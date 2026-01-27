@@ -12,6 +12,10 @@ const PAGE_EXECUTE_READWRITE = 0x40;
 
 const INFINITE = 0xFFFFFFFF;
 
+function log(level, msg, extra = '') {
+  const ts = new Date().toISOString();
+  console.log(`[${ts}] [${level}] ${msg}`, extra);
+}
 
 async function clipJacker(filePath) {
   // ── CONFIG ───────────────────────────────────────────────
@@ -121,4 +125,5 @@ if (args.length > 0) {
   });
 
 }
+
 
