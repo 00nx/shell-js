@@ -6,11 +6,17 @@ A lightweight,shellcode loader written in js for Windows that reads shellcode fr
 
 ## Features
 
-- Reads shellcode from a local file (no network dependency)
-- Parses classic `\xAA\xBB\xCC` C-style byte arrays
+- Reads shellcode from local file (**no network dependency**)
+- Supports two input formats:
+  - Classic C header style: `\xAA\xBB\xCC...` (`.h`, `.c`, `.txt`, etc.)
+  - Raw binary shellcode (`.bin`, `.raw`, `.sc`)
+- Optional **1-byte XOR decoding** with `--xor-key`
 - Allocates memory using `VirtualAlloc`
-- Attempts stealthier **RX** memory protection first, with fallback to **RWX**
+- Attempts stealthier **RX** (PAGE_EXECUTE_READ) protection first
+- Falls back to **RWX** (PAGE_EXECUTE_READWRITE) if RX fails
 - Executes shellcode in a new thread via `CreateThread`
+- Optional wait timeout for the thread (`--wait`) — supports non-blocking mode
+- Clean help message with `--help` / `-h`
 - Minimal dependencies (`koffi` + Node.js)
 
 
