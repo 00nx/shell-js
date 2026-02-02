@@ -37,13 +37,24 @@ cd shell-js
 npm install koffi
 ```
 
-## usage
+# Basic usage (C header file)
+node inject.js payload.h
 
-1. prepare the shell code with [donut](https://github.com/TheWover/donut) with proper flags ( must need C heade type -f 3 )
-2. Run the loader
-   ```bash
-   node inject.js
-   or
+# Specify raw binary shellcode
+node inject.js beacon.bin
+
+# With XOR decoding (key = 0x5A)
+node inject.js payload.h --xor-key 0x5A
+node inject.js payload.bin -k 90
+
+# Run and exit immediately (non-blocking)
+node inject.js shellcode.bin --wait 0
+
+# Wait max 10 seconds for thread to finish
+node inject.js staged.bin --wait 10000
+
+# Show help
+node inject.js --help
    node inject.js bytes.h
    ```
 
