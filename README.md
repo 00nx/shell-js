@@ -37,6 +37,16 @@ cd shell-js
 npm install koffi
 ```
 
+
+## usage
+
+```s
+Usage: node inject.js <file> [options]
+Options:
+  --xor-key <number>   XOR decode shellcode with 1-byte key (0–255)
+  --wait <ms>          WaitForSingleObject timeout (default: infinite, 0 = non-blocking)
+  --help               Show this help
+  ```
 # Basic usage (C header file)
 node inject.js payload.h
 
