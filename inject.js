@@ -8,12 +8,8 @@ const crypto = require('crypto');
 const koffi  = require('koffi');
 
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  Configuration
-// ═══════════════════════════════════════════════════════════════════════════
-
 const CONFIG = Object.freeze({
-  DEFAULT_MAX_FILE_SIZE : 10 * 1024 * 1024,      // 10 MiB
+  DEFAULT_MAX_FILE_SIZE : 10 * 1024 * 1024,     
   RAW_EXTENSIONS        : ['.bin', '.raw', '.sc', '.shellcode', '.dat'],
   HEX_EXTENSIONS        : ['.txt', '.h', '.c', '.hex', '.bytes'],
   ALLOWED_FORMATS       : ['auto', 'raw', 'hex'],
