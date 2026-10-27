@@ -3,6 +3,22 @@ const path = require('path');
 const crypto = require('crypto');
 const koffi = require('koffi');
 
+
+const DEFAULT_MAX_SIZE     = 10 * 1024 * 1024;
+const RAW_EXTENSIONS       = new Set(['.bin', '.raw', '.sc', '.shellcode', '.dat']);
+const HEX_EXTENSIONS       = new Set(['.txt', '.h', '.c', '.hex', '.bytes']);
+const ALLOWED_FORMATS      = new Set(['auto', 'raw', 'hex']);
+
+const INFINITE             = 0xFFFFFFFF;
+const WAIT_OBJECT_0        = 0x00000000;
+const WAIT_TIMEOUT         = 0x00000102;
+
+const MEM_COMMIT           = 0x1000;
+const MEM_RESERVE          = 0x2000;
+const PAGE_READWRITE       = 0x04;
+const PAGE_EXECUTE_READ    = 0x20;
+const PAGE_EXECUTE_READWRITE = 0x40;
+
 async function main() {
   const args = process.argv.slice(2);
 
