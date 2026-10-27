@@ -1,12 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  shellcode-runner.js
-//
-//  Loads shellcode from a raw binary or `\xNN` hex-text file, optionally
-//  XOR-decodes it, reports static analysis, and (on Windows) executes it
-//  inside a freshly-allocated RX page via a worker thread.
-//
-//  Usage: node shellcode-runner.js <file> [options]     (see --help)
-// ═══════════════════════════════════════════════════════════════════════════
+
 
 'use strict';
 
